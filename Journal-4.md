@@ -85,7 +85,7 @@ export interface IStats{
 export class LeadSummaryComponent extends React.Component<IStats> {
     public render(): React.ReactNode {
         return (
-        	<div class="main-div">
+            <div class="main-div">
             	<h1>{this.props.name}</h1>
             </div>
         )
@@ -279,7 +279,6 @@ export class SummaryComponent extends React.Component<ISummaryStats, ISummarySta
     )
   }
 }
-
 ```
 
 Overall, this was a big week in the development of the project.
