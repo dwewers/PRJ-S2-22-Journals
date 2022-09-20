@@ -199,3 +199,5 @@ private static string ValidateVisits(List<dev_sitecorevisit> visits, dev_sitecor
             return false;
         }
 ```
+
+This week was a big leap in the development as the code was further refined and refactored to mitigate more bugs as well as overall complexity. By changing the data retrieval method from my previous method to using LINQ, the data retrieval method was both simplified and easier to read. A lot was learned this week in regards to C# which is great as it is a key aspect of this project. Not much was done in the way of the custom control as the plugin was the main focus of the week.
