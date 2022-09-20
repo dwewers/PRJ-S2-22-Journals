@@ -61,8 +61,52 @@ public System.Linq.IQueryable<dev_sitecorevisit> VisitSet
     }
 }
 ```
+The original method used to retireve the data worked, however it was overly complicated and not the easiest to read. The complexity also made future development harder if I wanted to add more to the query. Below we can see the initial method:
 
-Below is the full execution method:
+```c#
+var query =
+	crmServiceContext.LeadSet
+	    .Join(crmServiceContext.XdbcontactSet, x => x.LeadId,
+		y => y.dev_dev_sitecorexdbcontact_leadid_lead.LeadId,
+		(x, y) =>
+		    new
+		    {
+			lead = x, 
+			contact = y
+		    }
+	    )
+	    .Join(crmServiceContext.VisitSet, a => a.contact.dev_sitecorexdbcontactId,
+		b => b.dev_xdbcontactid.Id, (a, b) =>
+		    new
+		    {
+			lead = a, 
+			visits = b
+		    }
+	    )
+	    .ToList().Where(z => z.lead.lead.LeadId == id)
+	    .Select(data => new
+	    {
+		data.visits,
+		data.lead.contact,
+	    });
+```
+This method worked by joining the leadset created by the Early Bound Generator with the Xdbcontact set based on the matching lead ids, then to the visit set based on the matching xdbcontactids. In a sense, the method used is similar to that with a Common Table Expression (cte) in SQL; inner joins were created between the data sets, a where clause was then stated, followed by the details that we wanted to retrieve. At first glance, it looked overwhelming, but once you got an idea of it, it became a bit easier to understand. However, this method could be simplified much more.
+
+it was better that we go step by step and gather the desired information rather than trying to achieve it in one query. Firstly, it was not necissery to go through the leadset as we were already passing the leadid to the plugin on initialization of the custom control. Thus, the initial `crmServiceContext.LeadSet` reference could be removed. This meant that the entry point would then become the `crmServiceContext.XdbcontactSet.` As the goal was to split the steps up, a comparison was not required between two entity sets, rather we find an entity in the `XdbcontactSet` that matches the Lead Id that was passed to the plugin through the `context.InputParameters.`
+
+Below we can see how this is achieved:
+```c#
+dev_sitecorexdbcontact contact = crmServiceContext.XdbcontactSet
+	.FirstOrDefault(x => x.dev_dev_sitecorexdbcontact_leadid_lead.Id == id);
+```
+As we can see, this is far more simplified than the first part of the previous method. The same was replicated for the `crmServiceContext.VisitSet,` however we compare the contact id of the visits that match that of the contact entity declared above, as shown below:
+
+```c#
+List<dev_sitecorevisit> visits = crmServiceContext.VisitSet
+	.Where(x => x.dev_xdbcontactid.Id == contact.Id).ToList();
+```
+
+This reduced the way we retireve the related data by over half the amount of code from the original method. This also made the data retrieval method much easier to debug as well as understand. With a few modifications, we can see the simpler execution code for retrieving the data:
 
 ```c#
 public void Execute(IServiceProvider serviceProvider)
@@ -122,14 +166,68 @@ public void Execute(IServiceProvider serviceProvider)
         }
 ```
 
-And Here is the validation:
+In the method above, we can see that the returned value of `context.OutputParameters["data"]` is set to the returned value of the method `ValidateVisits(visits, contact).` There are several steps prior to returning the data, these include the calculations of each field as well as the validation of data.
+
+There are four calculations that are required within the requirements of this project, these being:
+
+**Total Visit Count**
+
+```c#
+/// <summary>Gets the count of visits from the list of visits</summary>
+/// <param name="visits">The visits.</param>
+/// <returns>Count if there are any visits, else zero</returns>
+private static int SitecoreVisitCount(IReadOnlyCollection<dev_sitecorevisit> visits)
+{
+	return visits.Any() ? visits.Count() : 0;
+}
+```
+
+**Average Duration**
+
+```c#
+/// <summary>Gets the average visit time from the list of visits</summary>
+/// <param name="visits">The visits.</param>
+/// <returns>Average if there are any visits, else zero</returns>
+private static double SitecoreVisitAverageDuration(IReadOnlyCollection<dev_sitecorevisit> visits)
+{
+	return visits.Any() ? Math.Round(visits.Average(x => double.Parse(x.dev_duration)), 2) : 0;
+}
+```
+
+**Total Page Views**
+
+```c#
+/// <summary>Gets the sum of page views from the list of visits</summary>
+/// <param name="visits">The visits.</param>
+/// <returns>Sum if there are any visits, else zero</returns>
+private static int? SitecorePageViews(IReadOnlyCollection<dev_sitecorevisit> visits)
+{
+	return visits.Any() ? visits.Sum(x => x.dev_pageviews) : 0;
+}
+```
+
+**Total Goal Value**
+
+```c#
+/// <summary>Gets the sum of visits values from the list of visits</summary>
+/// <param name="visits">The visits.</param>
+/// <returns>Sum if there are any visits, else zero</returns>
+private static double SitecoreVisitValue(IReadOnlyCollection<dev_sitecorevisit> visits)
+{
+	return visits.Any() ? Math.Round((double)visits.Sum(x => x.dev_value), 2) : 0;
+}
+```
+
+Each of these methods were original a set of if/else statements, however these were simplified to using conditional operators.
+
+These were all called using the `ValidateVisits` method as seen below:
 
 ```c#
 private static string ValidateVisits(List<dev_sitecorevisit> visits, dev_sitecorexdbcontact contact)
         {
-            if (visits.Count > 0)
+            if (visits.Count > 0) // Firstly check to see if there actually is any visits
             {
-                return JsonConvert.SerializeObject(
+                return JsonConvert.SerializeObject( // Return as a object converted into a JSON string on success
                     new
                     {
                         status = "success",
@@ -141,62 +239,13 @@ private static string ValidateVisits(List<dev_sitecorevisit> visits, dev_sitecor
                         visits
                     });
             }
-            return JsonConvert.SerializeObject(
+            return JsonConvert.SerializeObject( // Return as a object converted into a JSON string when no visits present
                 new
                 {
                     status = "Failed",
                     code = 01,
                     error = "There are no visits related to this entity"
                 });
-        }
-
-        /// <summary>Gets the count of visits from the list of visits</summary>
-        /// <param name="visits">The visits.</param>
-        /// <returns>Count if there are any visits, else zero</returns>
-        private static int SitecoreVisitCount(IReadOnlyCollection<dev_sitecorevisit> visits)
-        {
-            return visits.Any() ? visits.Count() : 0;
-        }
-
-        /// <summary>Gets the average visit time from the list of visits</summary>
-        /// <param name="visits">The visits.</param>
-        /// <returns>Average if there are any visits, else zero</returns>
-        private static double SitecoreVisitAverageDuration(IReadOnlyCollection<dev_sitecorevisit> visits)
-        {
-            return visits.Any() ? Math.Round(visits.Average(x => double.Parse(x.dev_duration)), 2) : 0;
-        }
-
-        /// <summary>Gets the sum of page views from the list of visits</summary>
-        /// <param name="visits">The visits.</param>
-        /// <returns>Sum if there are any visits, else zero</returns>
-        private static int? SitecorePageViews(IReadOnlyCollection<dev_sitecorevisit> visits)
-        {
-            return visits.Any() ? visits.Sum(x => x.dev_pageviews) : 0;
-        }
-
-        /// <summary>Gets the sum of visits values from the list of visits</summary>
-        /// <param name="visits">The visits.</param>
-        /// <returns>Sum if there are any visits, else zero</returns>
-        private static double SitecoreVisitValue(IReadOnlyCollection<dev_sitecorevisit> visits)
-        {
-            return visits.Any() ? Math.Round((double)visits.Sum(x => x.dev_value), 2) : 0;
-        }
-
-
-        /// <summary>Validates the string to see if the user has designated a Lead Id.</summary>
-        /// <param name="leadid">The leadid.</param>
-        /// <param name="context">The context.</param>
-        /// <returns>True if there is a value, false if empty or null</returns>
-        private static bool ValidateString(string leadid, IPluginExecutionContext context)
-        {
-            if (!string.IsNullOrWhiteSpace(leadid)) return true;
-
-            context.OutputParameters["data"] = new
-            {
-                status = "Failed",
-                error = "Lead Id is required to perform this action."
-            };
-            return false;
         }
 ```
 
