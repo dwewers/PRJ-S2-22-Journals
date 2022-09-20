@@ -305,6 +305,8 @@ public void Execute(IServiceProvider serviceProvider)
         }
 ```
 
+And Here is the validation:
+
 ```c#
 private static string ValidateVisits(List<dev_sitecorevisit> visits, dev_sitecorexdbcontact contact)
         {
@@ -381,3 +383,4 @@ private static string ValidateVisits(List<dev_sitecorevisit> visits, dev_sitecor
         }
 ```
 
+Overall, a lot of development was made on the project this week. At this stage, It looks like the product is coming up to the half way point. However, there is likely a lot that will be refactored or changed to suit the needs of the project. Currently, the methods above work, but may not be the most ideal way of achieving the results.
