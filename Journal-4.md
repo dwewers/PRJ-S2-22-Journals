@@ -121,7 +121,7 @@ public init(context: ComponentFramework.Context<IInputs>, notifyOutputChanged: (
 
 With React Framework:
 
-```react
+```React
 export class SummaryComponent extends React.Component<ISummaryStats, ISummaryStats> {
   	constructor(props){
         super(props);
