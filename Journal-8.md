@@ -1,4 +1,4 @@
-# Journal 8 - 20/09/2022
+# Journal 8 - 14/09/2022
 
 As we are running on trial instances of Dynamics 365 Sales, this week required the creation of a new environment. Prior to the trial ending, it was crucial that the previous solution was exported so that we didn't loose the configurations made to the system. This would allow the continuation in the new instance from where we had left off in the previous. 
 
