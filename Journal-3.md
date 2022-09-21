@@ -1,4 +1,4 @@
-## Journal 3 - 18/08/2022
+## Journal 3 - 10/08/2022
 
 ### WebAPI
 
