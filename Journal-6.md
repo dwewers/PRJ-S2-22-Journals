@@ -1,3 +1,4 @@
+# Journal 6 - 07/09/22
 ### Getting started
 
 It was then time to start on the final product. Initially, a plugin had been developed to create the custom entities and their relationships, however this would not be necessary as the final product would be a solution that can be imported by the client. This solution would contain all of the required entities rather than creating them when the solution is imported. To do this, the Power Apps tool was used to create each of the entities shown in the relational diagram provided. This did not take very long as it is mostly just point and click with a few configurations (setting string limits).
