@@ -1,4 +1,4 @@
-## Journal 4 - 24/08/2022
+## Journal 4 - 17/08/2022
 
 ### React component
 
