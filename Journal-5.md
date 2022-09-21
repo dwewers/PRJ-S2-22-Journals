@@ -1,4 +1,4 @@
-## Journal 5 - 31/08/2022
+## Journal 5 - 24/08/2022
 
 As it was five weeks into the learning phase of the project, and most testing and integration testing was complete with good knowledge of custom controls and plugins, it was time to move onto the actual product that was desired. The custom control would remain pretty much the same with a few minor adjustments, whereas a lot of work would need to be put in to the development of the plugins that would work with the control.
 
