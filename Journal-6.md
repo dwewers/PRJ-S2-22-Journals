@@ -1,78 +1,204 @@
-# Journal 6 - 07/09/2022
+### Getting started
 
-As we are running on trial instances of Dynamics 365 Sales, this week required the creation of a new environment. Prior to the trial ending, it was crucial that the previous solution was exported so that we didn't loose the configurations made to the system. This would allow the continuation in the new instance from where we had left off in the previous. 
+It was then time to start on the final product. Initially, a plugin had been developed to create the custom entities and their relationships, however this would not be necessary as the final product would be a solution that can be imported by the client. This solution would contain all of the required entities rather than creating them when the solution is imported. To do this, the Power Apps tool was used to create each of the entities shown in the relational diagram provided. This did not take very long as it is mostly just point and click with a few configurations (setting string limits).
 
-There were initially a couple of issues, one being that when trying to retrieve the data via Postman (and the control), an authentication error was being thrown. This was due to their not being security roles provided to the current user that allows read and write privilege's for the new instance. This was an easy fix as all that was needed was to assign FuseIT a new application user of type "System Administrator." This is the easiest option as it gives full access rights to the user, however for deployment, it is likely that you would change this depending on who is using the system.
+As we can see below, all of the custom entities are displayed in the solutions tables list. You may notice that the lead and contacts table is also listed. This is because of the relationships with them (the lookup fields on the XDB entity).
 
-Testing was done to make sure that data retrieval and creation worked as it did with the previous environment. This was successful, which allowed for development to continue on other areas. The next step from the previous week, where we used entities and services rather than FetchXML, was to develop the plugin further to handle more functionality, as well as split code up into their purposes. At the stage that the project was at, all code (other than the validation) was executed within the main execution method. At the stage at it was at, this was not an issue, however if we wanted to reuse functionality or add more, we would have duplicate code or methods that have multiple purposes. 
+![](https://i.imgur.com/EOhqvQq.png)
 
-Ideally, the methods and entities would be split up into their own separate files in folders relative to what they are. For example:
+The next step was to start work on the plugin new plugin. 
 
-```spreadsheet
-DataRetievalPlugin.
-│   DataRetrievalPlugin.cs   
-│   DataRetrievalPlugin.csproj
-|   app.config
-|   packages.config
-|
-└───Services
-│   │   JsonService.cs
-│   │   SitecoreService.cs
-│   │   VisitService.cs
-│   │   EntityService.cs
-│
-└───Entities
-│   │   SitecoreXDBContactEntity.cs
-│   │   SitecoreVisitEntity.cs
-│   
-└───Properties
-    │   AssemblyInfo.cs
-```
+A basic plugin is quite easy to make and only requires a few steps.
 
-By splitting code up into different files, it becomes much easier to manage especially as the plugin becomes more complex. The execute method was then reduced to the following:
+1. The first step Create a .NET Framework Class library project in Visual Studio. This plugin should use .NET Framework 4.6.2 as any features introduced after this version will throw an error.
 
-```c#
-private readonly VisitService _visitService = new VisitService();
+   ![asd](https://imgur.com/wjYiJEp.jpg)
 
-public void Execute(IServiceProvider serviceProvider)
-{
-    ITracingService tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
-    IPluginExecutionContext context = (IPluginExecutionContext) serviceProvider.GetService(typeof(IPluginExecutionContext));
-    IOrganizationServiceFactory factory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
-    IOrganizationService service = factory.CreateOrganizationService(context.InitiatingUserId);
+   ![](https://imgur.com/mYcm5nX.jpg)
 
-    try
-    {
-    	string result = _visitService.GetVisits(context, service);
-    	context.OutputParameters["data"] = result;
-    }
-    catch (Exception e)
-    {
-    	context.OutputParameters["data"] = e.Message;
-    }
-}	
-```
+   ![](https://imgur.com/ajd4ruF.jpg)
 
-A key difference that we can see is that a variable has been introduced called `_visitService.` This is used when we want to query data from the visit collection created using the Early Bound Generator. Within the `VisitService.cs` file, we have a method `GetVisits()` which passes the parameters `context` and `service.` These are used to create a new crm service and bind the returned values to the context output parameters.
+   ![](https://imgur.com/fZatnZy.jpg)
 
-Whenever we want to make a query, we use an `Entity Service`: 
+2. Next, add the `Microsoft.CrmSdk.CoreAssemblies` NuGet package to the project by running the following in the `Package Manager Console` located at the bottom of the screen:
 
-```c#
-EntityService crmServiceContext = new EntityService(service);
-```
+   ```turtle
+   Install-Package Microsoft.CrmSdk.CoreAssemblies
+   ```
 
-With this, we can make queries to any of the collections that have been generated. For the visits related to a given contact, we use the following code:
+   Or go through the NuGet package manager.
 
-```c#
-dev_sitecorexdbcontact contact = crmServiceContext.XdbcontactSet.FirstOrDefault(x => x.dev_leadid.Id == new Guid(leadId));
-List<dev_sitecorevisit> visits = crmServiceContext.VisitSet.Where(x => x.dev_xdbcontactid.Id == contact.Id).ToList();
-```
+3. Implement the [IPlugin](https://learn.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.iplugin) interface on classes that will be registered as steps.
 
-This gives us all the of the data needed to perform the calculations prior to returning the data back to the custom control when the following is run:
+   ```c#
+   using Microsoft.Xrm.Sdk;
+   using System;
+   
+   namespace ExamplePlugin
+   {
+       public class Plugin : IPlugin
+       {
+       }
+   }
+   ```
 
-```c#
-string result = _visitService.GetVisits(context, service);
-context.OutputParameters["data"] = result;
-```
+4. Add your code to the Execute method required by the interface and add any references to services or business logic:
 
-Overall, this week a lot of progress was made as well as a lot of new learning. There is still much more to achieve and plenty more to learn throughout this project. The goal for next week is to continue work on developing the main component.
+   ```c#
+   using Microsoft.Xrm.Sdk;
+   using Newtonsoft.Json;
+   using System;
+   using System.ServiceModel;
+   using System.Text.Json.Serialization;
+   
+   namespace ExamplePlugin
+   {
+       public class Plugin : IPlugin
+       {
+           public void Execute(IServiceProvider serviceProvider)
+           {
+               // Obtain the tracing service
+               ITracingService tracingService =
+                   (ITracingService)serviceProvider.GetService(typeof(ITracingService));
+   
+               // Obtain the execution context from the service provider.  
+               IPluginExecutionContext context = (IPluginExecutionContext)
+                   serviceProvider.GetService(typeof(IPluginExecutionContext));
+   
+               // The InputParameters collection contains all the data passed in the message request.  
+               if (context.InputParameters.Contains("Target") &&
+                   context.InputParameters["Target"] is Entity)
+               {
+                   // Obtain the target entity from the input parameters.  
+                   Entity entity = (Entity)context.InputParameters["Target"];
+   
+                   // Obtain the organization service reference which you will need for  
+                   // web service calls.  
+                   IOrganizationServiceFactory serviceFactory =
+                       (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
+                   IOrganizationService service = serviceFactory.CreateOrganizationService(context.UserId);
+   
+                   try
+                   {
+                       // Plug-in business logic goes here.  
+                       context.OutputParameters["data"] = JsonConvert.SerializeObject(new
+                       {
+                           name = "Daniel",
+                           age = 21,
+                           gender = "Male"
+                       });
+                   }
+   
+                   catch (FaultException<OrganizationServiceFault> ex)
+                   {
+                       throw new InvalidPluginExecutionException("An error occurred in FollowUpPlugin.", ex);
+                   }
+   
+                   catch (Exception ex)
+                   {
+                       tracingService.Trace("FollowUpPlugin: {0}", ex.ToString());
+                       throw;
+                   }
+               }
+           }
+       }
+   }
+   ```
+
+5. Sign the assembly
+   1. Click the class library in the solution explorer
+   2. Press `ctr + enter`
+   3. In the navigation pane, select `Signing`
+   4. Tick the textbox that says `Sign the assembly`
+   5. In the dropdown, select new and create a new key with a password and a key name
+   6. Click ok
+6. Right click the solution and click `Build` or press `ctr + b`
+7. The plugin is now ready to be registered
+
+To register a plugin, you need to perform the following steps:
+
+1. Firstly, you need to install the tools (ideally in your root directory):
+
+   ```bash
+   [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+   $sourceNugetExe = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
+   $targetNugetExe = ".\nuget.exe"
+   Remove-Item .\Tools -Force -Recurse -ErrorAction Ignore
+   Invoke-WebRequest $sourceNugetExe -OutFile $targetNugetExe
+   Set-Alias nuget $targetNugetExe -Scope Global -Verbose
+   
+   if (-not (./nuget source | Where-Object { $_ -like "*https://api.nuget.org/v3/index.json*"})) {
+     .\nuget sources Add -Name nuget.org.v3 -Source  https://api.nuget.org/v3/index.json
+   }
+   
+   ##
+   ##Download Plug-in Registration tool
+   ##
+   ./nuget install Microsoft.CrmSdk.XrmTooling.PluginRegistrationTool -O .\Tools
+   mkdir .\Tools\PluginRegistration
+   $prtFolder = (Get-ChildItem ./Tools | Where-Object {$_.Name -match 'Microsoft.CrmSdk.XrmTooling.PluginRegistrationTool.'}).Name
+   Move-Item .\Tools\$prtFolder\tools\*.* .\Tools\PluginRegistration
+   Remove-Item .\Tools\$prtFolder -Force -Recurse
+   
+   ##
+   ##Remove NuGet.exe
+   ##
+   Remove-Item nuget.exe
+   ```
+
+2. Navigate to the folder ``[Your folder]\Tools\PluginRegistration`` and run the application called `PluginRegistration`
+
+   ![](https://imgur.com/aK03ee8.jpg)
+
+3. Create a new connection
+
+   ![](https://imgur.com/5R8Pk3W.jpg)
+
+4. Log into your Office 365 account
+
+   ![](https://imgur.com/eoMoMDp.jpg)
+
+5. This will display a list of all assemblies registered to the environment
+
+   ![](https://imgur.com/GooVXe3.jpg)
+
+6. Press `ctr + a` to register a new assembly (your plugin) or navigate through the navigation pane `Register > Register New Assembly`
+
+7. Click the three dots to open the file explorer
+
+   ![](https://imgur.com/NntMNFx.jpg)
+
+8. Navigate to the `.dll` file located in `[Your solution]\Bin\Debug\[Plugin].dll`
+
+   ![](https://imgur.com/zTvcsFQ.jpg)
+
+9. Make sure the following are checked then click `Register Selected Plugins`
+
+   ![](https://imgur.com/5RD0F9G.jpg)
+
+10. If successful, the following message will display and we will be able to see the assembly in the list:
+
+    ![](https://imgur.com/EBblotl.jpg)
+
+    ![](https://imgur.com/ekPfjsq.jpg)
+
+11. Now we need to register a step. This is what will trigger the plugin. Start by pressing `ctr + t`
+
+    ![](https://imgur.com/2tHqIiX.jpg)
+
+    Here some test details have been filled out:
+
+    - Message: What will trigger the plugin (in this case a Create message)
+    - Primary Entity: Used if it is specific to the table. Left blank if it applies to all call messages
+    - Event Pipeline State of Execution: Stage in the event pipeline that best suites the purpose for the plug-in.
+
+    Once all of the configurations have been made in relation to your plugin, click `Register New Step`
+
+12. We will then see the new step in the list:
+
+    ![](https://imgur.com/ZbqQCEc.jpg)
+
+We have now successfully created and registered our plugin
+
+
+This week has been quite a learning curve. Firstly, was learning how to make a plugin, then how to register it. This was a slow process, but fortunately there is a lot of documentation.
