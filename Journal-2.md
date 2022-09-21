@@ -1,4 +1,4 @@
-## Journal 2 - 2/08/2022
+## Journal 2 - 03/08/2022
 
 The purpose of this week was an introduction too plugin development. This involved reading up on Microsoft documentation as well as any other tutorials present on the internet as well as implementing test plugins. This was a steep learning curve as there are many different purposes for plugins which require you to program in completely different ways. After reading plenty of documentation, it was then time to implement a test plugin for the dynamics environment. As it was a requirement that there would be custom entities, an ERD was presented that displayed the tables that were specific too FuseIT's needs (Dynamics has default tables made when a solution is created). Therefor, the "visits" entity was chosen for the test and would be used to learn the integration with Dynamics. The objective for this test plugin was to generate the tables when the solution is first created. 
 
