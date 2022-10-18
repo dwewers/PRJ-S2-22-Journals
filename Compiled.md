@@ -19,6 +19,8 @@ Below are the responsibilities as an intern at FuseIT:
 - Ensure project is delivered to some stage of completion;
 - Maintain strong coding standards for software development;
 
+------
+
 # Journal 2 - 03/08/2022
 
 The purpose of this week was an introduction too plugin development. This involved reading up on Microsoft documentation as well as any other tutorials present on the internet as well as implementing test plugins. This was a steep learning curve as there are many different purposes for plugins which require you to program in completely different ways. After reading plenty of documentation, it was then time to implement a test plugin for the dynamics environment. As it was a requirement that there would be custom entities, an ERD was presented that displayed the tables that were specific too FuseIT's needs (Dynamics has default tables made when a solution is created). Therefor, the "visits" entity was chosen for the test and would be used to learn the integration with Dynamics. The objective for this test plugin was to generate the tables when the solution is first created. 
@@ -135,6 +137,8 @@ FIX:It was discovered that you are supposted to use "odata.bind." Like it was or
 ```
 
 Overall, this week was a big learning curve, but a lot of new knowledge was gained and a lot of experience was gained using Microsoft Dynamics 365.
+
+------
 
 # Journal 3 - 10/08/2022
 
@@ -260,6 +264,8 @@ As we can see, **Goal Values**, **Avg Visit Time**, and **Views** are not showin
 Overall, it has been a pretty successful week with a lot learned and a significant amount of progress made.
 
 XrmToolBox. (2022, July 15). *FetchXML Builder · XrmToolBox*. Retrieved August 18, 2022, from https://www.xrmtoolbox.com/plugins/Cinteros.Xrm.FetchXmlBuilder/
+
+------
 
 # Journal 4 - 17/08/2022
 
@@ -404,7 +410,9 @@ export class SummaryComponent extends React.Component<ISummaryStats, ISummarySta
 }
 ```
 
-Overall, this was a big week in the development of the project.
+Overall, it has been a pretty successful week with a lot learned and a significant amount of progress made towards the project.
+
+------
 
 # Journal 5 - 24/08/2022
 
@@ -584,6 +592,8 @@ This process works similarly in concept to the update analytics call. It should:
       - Strongly-typed classes should be created to serialize and deserialize JSON.
 
 Overall, the main focus of this week was to understand the functional and non-functional requirements of the system. The goal hear was to focus more on the research and planning rather than starting the implementation of code. This was quite a productive week as a lot was learned and a decent start was made on the final report
+
+------
 
 # Journal 6 - 31/08/22
 
@@ -792,7 +802,10 @@ To register a plugin, you need to perform the following steps:
 
 We have now successfully created and registered our plugin
 
+
 This week has been quite a learning curve. Firstly, was learning how to make a plugin, then how to register it. This was a slow process, but fortunately there is a lot of documentation.
+
+------
 
 # Journal 7 - 07/09/2022
 
@@ -1051,6 +1064,8 @@ private static string ValidateVisits(List<dev_sitecorevisit> visits, dev_sitecor
 
 This week was a big leap in the development as the code was further refined and refactored to mitigate more bugs as well as overall complexity. By changing the data retrieval method from my previous method to using LINQ, the data retrieval method was both simplified and easier to read. A lot was learned this week in regards to C# which is great as it is a key aspect of this project. Not much was done in the way of the custom control as the plugin was the main focus of the week.
 
+------
+
 # Journal 8 - 14/09/2022
 
 As we are running on trial instances of Dynamics 365 Sales, this week required the creation of a new environment. Prior to the trial ending, it was crucial that the previous solution was exported so that we didn't loose the configurations made to the system. This would allow the continuation in the new instance from where we had left off in the previous. 
@@ -1130,4 +1145,1215 @@ context.OutputParameters["data"] = result;
 
 Overall, this week a lot of progress was made as well as a lot of new learning. There is still much more to achieve and plenty more to learn throughout this project. The goal for next week is to continue work on developing the main component.
 
-# Journal 9 - 21/09/2022 (TODO)
+------
+
+# Journal 9 - 21/09/2022
+
+The focus of this week was to do more work on the custom control. There was an issue where the data was not passing to the main component. To find where the issue was occurring, debugger code was placed in each of the steps like follows:
+
+```typescript
+console.log(1);
+console.log(result);
+debugger;
+```
+
+This would pause the execution at the given point and tell me where it was with the first console log, and what the current state of the response looked like.
+
+It was discovered that an error was being thrown in the following section:
+
+```typescript
+self._data.status = stats.data.status || "";
+self._data.contactAliasId = stats.data.contactAliasId || "";
+self._data.count = stats.data.count || 0;
+self._data.duration = stats.data.duration || 0;
+self._data.views = stats.data.views || 0;
+self._data.value = stats.data.value || 0;
+```
+
+The reason for this is that `stats` is equal to `JSON.parse(response.data)` whereas the way it was written above would be if `stats` were to equal `JSON.parse(response).` This is a simple fix as the data part of each declaration needed to be removed.
+
+The correct method is as follows:
+
+```typescript
+self._data.status = stats.status || "";
+self._data.contactAliasId = stats.contactAliasId || "";
+self._data.count = stats.count || 0;
+self._data.duration = stats.duration || 0;
+self._data.views = stats.views || 0;
+self._data.value = stats.value || 0;
+```
+
+This fixed the issue and the data was then loading as desired. The next task was to work on getting the list of visits and mapping them to the ISitecoreVisit Interface. Getting the details was the easy part, however figuring out each of the attributes was a struggle. At first it was though that the following method would achieve the goal:
+
+```typescript
+stats.visits.map((visit: any) => {
+    visits.push({
+        id: visit.Id,
+        interactionId: visit.dev_iteractionid,
+        views: visit.dev_pageviews,
+        browser: visit.dev_browser,
+        value: visit.dev_value,
+        channel: visit.channel
+    })
+});
+```
+
+However, after reviewing the returned object, the attributes of the visits are in a sub-array called `Attributes` where each item is an object with a key and value as shown below:
+
+```json
+[
+    {
+        "Key": "dev_interactionid",
+        "Value": "7785a78a-552e-ed11-9db1-00224893bf8a"
+    },
+    {
+        "Key": "dev_pageviews",
+        "Value": 2
+    },
+    {
+        "Key": "dev_browser",
+        "Value": "chrome"
+    },
+    {
+        "Key": "dev_value",
+        "Value": 3
+    },
+    {
+        "Key": "dev_channel",
+        "Value": "MOBILE_WEB"
+    }
+]
+```
+
+To solve this, the following changes were made:
+
+```typescript
+stats.visits.map((visit: any) => {
+    visits.push({
+        id: visit.Id,
+        interactionId: visit.Attributes[0].Value, // Instead of visit.dev_iteractionid
+        views: visit.Attributes[1].Value, // Instead of visit.dev_pageviews
+        browser: visit.Attributes[2].Value, // Instead of visit.dev_browser
+        value: visit.Attributes[3].Value, // Instead of visit.dev_value
+        channel: visit.Attributes[4].Value // Instead of visit.channel
+    })
+});
+```
+
+This may not be the best option as a change in the order returned would cause data issues.
+
+Another key important part of the project that was focussed on this week was standardisation of components. This means to keep with the standards that Dynamics and Power Apps use for designing their controls. Power Apps uses a framework called FluentUI which is developed by Microsoft. This is similar to Bootstrap and allows for the use of custom components that are consitent with those that Power Apps and Dynamics uses.
+
+The first and major change was the table of visits. FluentUI has a component called a detailslist. This is essentially a table that allows for sorting, grouping, and filtering of data. These are very customisable and allow for columns to include such things as links and buttons.
+
+Below is the table after changing it to use FluentUI:
+
+```typescript
+<MarqueeSelection selection={this._selection}>
+  <DetailsList
+    items={value}
+    columns={this._columns}
+    setKey="set"
+    layoutMode={DetailsListLayoutMode.justified}
+    selectionPreservedOnEmptyClick={true}
+    ariaLabelForSelectionColumn="Toggle selection"
+    ariaLabelForSelectAllCheckbox="Toggle selection for all items"
+    checkButtonAriaLabel="select row"
+  />
+</MarqueeSelection>
+```
+
+This passes the `this._value` as the data and `this._columns` (which are created previously) as the table columns.
+
+Overall, this week was very productive and a lot of progress was made on developing the project.
+
+------
+
+# Journal 10 - 28/09/2022
+
+This week some further work was done on standardisation. Last week the table was changed from a normal HTML/TSX table into a FluentUI table. However, the rest of the layout was still using normal `div's` to created the components layout. After doing some research, it was discovered that FluentUI has a component called a `Stack` (parent element) that has sub components called `Stack.Item` (child element). These work in a similar way to that of grid CSS.
+
+You simply create a `Stack` like you would a `div` and add `Stack.Item`'s to them':
+
+```typescript
+<Stack>
+	<Stack.Item></Stack.Item>
+</Stack>
+```
+
+These are useful as you can define whether the stack goes horizontally or vertically. After a bit of time, the following was created:
+
+```typescript
+<Stack>
+    {/* Main title */}
+    <StackItem style={styles.title}>
+        Sitecore Guest
+    </StackItem>
+    {/* Sitecore Summary Sectionn */}
+    <StackItem style={styles.section}>
+        <Stack horizontal horizontalAlign='center'>
+            <StackItem>
+                <Stack style={styles.secondary}>
+                    <StackItem style={styles.header}>
+                        {this.props.Statistics.value}
+                    </StackItem>
+                    <StackItem style={styles.subHeader}>
+                        Goal Value
+                    </StackItem>
+                </Stack>
+            </StackItem>
+            <StackItem>
+                <Stack style={styles.secondary}>
+                    <StackItem style={styles.header}>
+                        {this.props.Statistics.count}
+                    </StackItem>
+                    <StackItem style={styles.subHeader}>
+                        Visit Count
+                    </StackItem>
+                </Stack>
+            </StackItem>
+            <StackItem>
+                <Stack style={styles.secondary}>
+                    <StackItem style={styles.header}>
+                        {this.props.Statistics.duration}
+                    </StackItem>
+                    <StackItem style={styles.subHeader}>
+                        Avg Visit Time
+                    </StackItem>
+                </Stack>
+            </StackItem>
+            <StackItem>
+                <Stack style={styles.secondary}>
+                    <StackItem style={styles.header}>
+                        {this.props.Statistics.views}
+                    </StackItem>
+                    <StackItem style={styles.subHeader}>
+                        Views
+                    </StackItem>
+                </Stack>
+            </StackItem>
+        </Stack>
+        <Stack horizontal horizontalAlign='center'>
+            {/* Refresh Analytics Button */}
+            <StackItem style={styles.button}>
+                <PrimaryButton text='Refresh Analytics' onClick={this.refresh} />
+            </StackItem>
+        </Stack>
+        <StackItem align="auto">
+            <Spinner size={SpinnerSize.large} label="Refreshing Analytics..." style={{display: display}} />
+        </StackItem>
+    </StackItem>
+
+    {/* Secondary Title */}
+    <StackItem style={styles.subTitle}>
+        Sitecore Sessions
+    </StackItem>
+    {/* List of visits */}
+    <StackItem style={styles.section}>
+        <VisitsDetailsList data={this.props.Statistics.visits} />
+    </StackItem>
+</Stack>
+```
+
+As you can see, each of the components have their own style relative to what they are. Rather than doing inline styling, we can create style objects that have a set of defined styles. For example:
+
+```typescript
+const styles = {
+    title: {
+        "color": palette.midBlue,
+        "fontSize": "2.25rem",
+        "fontWeight": "bold",
+        "margin": "0.5rem",
+        "padding": "0.5rem",
+    },
+    subTitle: {
+        "color": palette.midBlue,
+        "fontSize": "1.5rem",
+        "fontWeight": "bold",
+        "margin": "0.5rem",
+        "padding": "0.5rem",
+    },
+    header: {
+        "color": palette.darkBlue,
+        "fontSize": "1.75rem",
+        "fontWeight": "bold"
+    },
+    subHeader: {
+        "color": palette.darkBlue,
+        "fontSize": "1.5rem",
+        "fontWeight": "lighter"
+    },
+    section: {
+        "border": "3px solid" + palette.lightBlue,
+        "padding": "10px",
+        "margin": "10px",
+    },
+    secondary: {
+        "border": "3px solid" + palette.lightGrey,
+        "padding": "10px",
+        "margin": "10px",
+    },
+    button: {
+        "margin": "1rem",
+    }
+}
+```
+
+Additionally, colour palettes can be created in the same way  and used throughout the style objects. The colour palette shown below is the same that is used in Microsoft Dynamics:
+
+```typescript
+const palette = {
+    darkBlue: "#002050",
+    midBlue: "#1160b7",
+    lightBlue: "#b1d6f0",
+    lightGrey: "#dfe2e8",
+    red: "#d24726"
+}
+```
+
+As this weeks focus was more on the standardising of the components, not a lot was done in other areas. This was mainly due to working from home and needing to spend some time tidying up the component before further work was done on the plugins. However, with what was achieved this week, there isn't much left to do component side, just plugin side.
+
+------
+
+# Week 11 - 05/10/2022
+
+The focus of this week was to work on the outbound request to the Sitecore web service. At this stage, the web server was not ready for the system to connect too, so an Azure static app was created to host some test files that we could make http requests towards. This is a simple app that has two routes, one for testing the refresh of analytics and one for getting individual data of a visit. When a `HTTP GET` request is made, a JSON string is returned to the called. 
+
+Below is an example of the data from the analytics route:
+
+```json
+{
+    "status": "success",
+    "contactAliasId": "123",
+    "visits": [{
+        "interactionid": "C6732455-439E-0000-0000-0639A894F065",
+        "name": "2021.255.10438",
+        "startdate": "2021-09-08 20:15:46.98Z",
+        "enddate": "2021-09-09 21:22:22.65Z",
+        "browser": "Chrome v102.0",
+        "channel": "direct",
+        "duration": "00:02:22.2023053",
+        "views": 1,
+        "value": 1,
+        "campaign": "1234567890",
+        "goals": [{
+            "goalid": "637670953205500000_a24a09da-a5b3-0000-0000-063a758176ad_b0c5a8de-8355-49be-ba71-37b770d3471a",
+            "date": "2021-09-13T02:02:00.000Z",
+            "path": "/products/request-quote",
+            "value": 10
+        },
+        {
+            "goalid": "637670953205500000_a24a09da-a5b3-0000-0000-063a758176ad_b0c5a8de-8355-49be-ba71-37b770d3471a",
+            "date": "2022-09-13T02:02:00.000Z",
+            "path": "/products/request-quote2",
+            "value": 22
+        }]
+    }, {
+        "interactionid": "AS3AAA25-439E-0000-0000-0639A894F065",
+        "name": "2021.255.10438",
+        "startdate": "2021-09-08 20:15:46.98Z",
+        "enddate": "2021-09-08 20:55:32.65Z",
+        "browser": "Chrome v102.0",
+        "channel": "direct",
+        "duration": "00:02:22.2023053",
+        "views": 9,
+        "value": 33,
+        "campaign": "1234567890",
+        "goals": [{
+            "goalid": "637670953205500000_a24a09da-a5b3-0000-0000-063a758176ad_b0c5a8de-8355-49be-ba71-37b770d3471a",
+            "date": "2021-09-13T02:02:00.000Z",
+            "path": "/products/request-quote",
+            "value": 10
+        }]
+    }]
+}
+```
+
+And here is an example of the data from the events route:
+
+```json
+{
+    "interactionid": "C6732455-439E-0000-0000-0639A894F065",
+    "type": "PageViewEvent",
+    "timestamp" : "2022-09-01T20:10:46.98Z",
+    "url" : "https://sitename.com/path/to/page1"
+}
+```
+
+Developing the methods required to make these outbound requests was rather straight forward. There were no issues with this due to prior knowledge of making HTTP requests in .NET. The only area that was new was adding custom headers to the request to pass the Sitecore API key to the web server. After a quick Google search, the following method was implemented:
+
+```c#
+client.DefaultRequestHeaders.Add("x-api-key", config.SitecoreApiKey);
+```
+
+This adds the specified header and its value to the `System.Net.Http.Headers.HttpHeaders` collection. The http method is as follows (stripped additional code):
+
+```c#
+public static async Task<string> PostAsync(SitecoreConfig config, string id, PluginContext context)
+        {
+            try
+            {
+                using (HttpClient client = context.HttpClient)
+                {
+                    client.DefaultRequestHeaders.Add("x-api-key", config.SitecoreApiKey);
+                    
+                    Dictionary<string, string> parameters = new Dictionary<string, string>()
+                    {
+                        {
+                            "maxVisits", config.MaxVisits.ToString()
+                        }
+                    };
+
+                    HttpResponseMessage response = await client.PostAsync(config.SitecoreApiUrl + "GetData",
+                        new FormUrlEncodedContent(parameters));
+                    
+                    string contents = await response.Content.ReadAsStringAsync();
+                    //Other Business Logic
+                }
+            }
+            catch (Exception e)
+            {
+                //Exception Handling
+            }
+        }
+```
+
+This method uses the HTTP client generated in the `PluginContext` file, adding the Sitecore API key as a custom header and the config max visits in the body. As the config URL is not specific to a route, we add the route name to the end in the `PostAsync()` method.
+
+This same method is consistent across the `UpdateAnalytics` plugin and the `IndividualDetails` plugin. However, the section marked above as `Other Business Logic` differs between the two plugins.
+
+Implementation with the custom control to make the requests was the same as which the method is implemented for retrieving the data:
+
+```typescript
+private refresh = () => {
+        let request = {
+            leadid: this.props.Statistics.id,
+            getMetadata: function () {
+                return {
+                    boundParameter: null,
+                    operationType: 0,
+                    operationName: 'dev_RefreshAnalytics',
+                    parameterTypes: {
+                        'leadid': {
+                            typeName: 'Edm.String',
+                            structuralProperty: 1,
+                        },
+                    },
+                };
+            },
+        };
+
+        Xrm.WebApi.online.execute(request).then(
+            (result: any) => {
+                // Other Business Logic
+            },
+            (error: any) => {
+                // Other Business Logic
+            }
+        );
+    };
+```
+
+1. We define the request passing the `leadid` as a string parameter, and defining the `operationType` as unbound (0), and the  operation name as `dev_RefreshAnalytics`
+2. We execute the request using the `Xrm.WebApi.online.execute()` method and wait for a response.
+3. If the response is successful then we perform the business logic for a successful response, else we do something with the error
+
+Overall, this week was very successful. A lot of progress was made on the project and it is almost at the stage of being a minimal proof-of-concept product. The component is working as it should in the "best case scenario," but this is what is required of me from the work placement. However, some additionally error handling should be implemented in the next couple of weeks. All that is left to do is some code refactoring, code commenting, and a write up on the system to provide to FuseIT.
+
+------
+
+# Week 12 - 12/10/2022
+
+3262 - 3762
+
+The focus of this week was to refactor the code and start the documentation process. I was asked that the code was commented and formatted in a way that would be easy to be picked up by someone else and be understandable. This includes such things as file structure, naming conventions, consistency across the plugins, and code comments.
+
+One of the problems when developing this project was that each requirement was a learning process. As one feature was implemented, better ways of doing so were learned throughout the work placement. As there were three plugins developed, this meant that the first plugin was the earliest implementation, while the others had improvements along the way. This is because with the given timeframe, it was necessary to move on to the next plugin once the previous was working. The result of this was that each plugin had their own way of doing similar tasks. This mean that if you were to compare each plugin, there were differences in the tasks that do the same thing.
+
+Looking at the high level layout of the plugins, they could all be designed to use a similar file structure. Below is the updated design for the plugin that retrieves analytics:
+
+```
+📦Plugin_Retrieve_Analytics
+| 📜PluginBase.cs
+|
+└───📁Context
+|	| 📜PluginContext.cs
+|
+└───📁Entities
+|	└───📁BaseEntities
+|	|	| 📜SitecoreSummary.cs
+|	|
+|	└───📁SitecoreEntities
+|	|	| 📜SitecoreVisitEntity.cs
+|	|	| 📜SitecoreXDBContactEntity.cs
+|	|
+└───📁Services
+|	| 📜DynamicsService.cs
+|	| 📜EntityService.cs
+|	| 📜OptionSets.cs
+|
+└───📁Utilities
+|	| 📜JsonUtil.cs
+|	| 📜StringUtil.cs
+```
+
+Comparing it to the plugin for individual events, there are only minor differences:
+
+```
+📦Plugin_Individual_Events
+| 📜PluginBase.cs
+|
+└───📁Context
+|	| 📜PluginContext.cs
+|
+└───📁Entities
+|	└───📁BaseEntities
+|	|	| 📜EventEntityBase.cs
+|	|	| 📜ResponseMessage.cs
+|	|	| 📜SitecoreConfig.cs 
+|	|
+|	└───📁SitecoreEntities
+|	|	| 📜EnvironmentVariableDefinitionEntity.cs
+|	|	| 📜EnvironmentVariableValueEntity.cs
+|	|	| 📜SitecoreVisitEntity.cs
+|	|	| 📜SitecoreXDBContactEntity.cs
+|
+└───📁Services
+|	| 📜DynamicsService.cs
+|	| 📜EntityService.cs
+|	| 📜OptionSets.cs
+|	| 📜SitecoreService.cs
+|
+└───📁Utilities
+|	| 📜JsonUtil.cs
+|	| 📜StringUtil.cs
+```
+
+1. The base entities has extra classes in the plugin for individual events.
+2. The Sitecore Entities has strongly types entities for the Dynamics Environment Variable in the plugin for individual events.
+3. The plugin that retrieves analytics does not have the `SitecoreService.cs` file in the `Services` folder as it does not make any requests to Sitecore.
+
+The design for the analytics refresh plugin is almost the same as the plugin for individual events, however it has a couple of additional `BaseEntities`
+
+One major change from the original design was the extraction of the initialization of all the contexts and services. Originally, these were all placed within the `Execute()` method in the `PluginBase` file. It was decided that these would be moved into their own class that could be used across multiple files.
+
+Below is the original design:
+
+```c#
+public void Execute(IServiceProvider serviceProvider)
+{
+    // Obtain the tracing service
+    ITracingService tracingService =
+        (ITracingService)serviceProvider.GetService(typeof(ITracingService));
+
+    // Obtain the execution context from the service provider.  
+    IPluginExecutionContext context = (IPluginExecutionContext)
+        serviceProvider.GetService(typeof(IPluginExecutionContext));
+
+    IOrganizationServiceFactory factory =
+        (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
+
+    IOrganizationService service = factory.CreateOrganizationService(context.InitiatingUserId);
+	
+    // Represents a source of entities bound to a CRM service. It tracks and manages changes made to the retrieved entities.
+    EntityService entityService = new EntityService();
+    
+    //Other Business Logic
+}
+```
+
+And here is the class:
+
+```c#
+using System;
+using System.Net.Http;
+using Microsoft.Xrm.Sdk;
+using Plugin_Refresh_Analytics.Entities.SitecoreEntities;
+
+namespace Plugin_Refresh_Analytics.Context
+{
+    /// <summary>
+    ///     Contains all methods for Dynamics/Microsoft Dataverse Actions
+    /// </summary>
+    public class PluginContext
+    {
+        // Represents a source of entities bound to a CRM service. It tracks and manages changes made to the retrieved entities.
+        private EntityService _entityService;
+
+        // Interface for plug-ins to provide trace information. Used for debugging and/or troubleshooting plug-in issues or behaviors are complicated
+        // without rich and insightful logging or tracing.
+        private ITracingService _tracingService;
+
+        // Defines the contextual information passed to a plug-in at run-time.
+        // Contains information that describes the run-time environment that the plug-in is executing in,
+        // information related to the execution pipeline, and entity business information.
+        private IPluginExecutionContext _context;
+
+        // Represents a factory for creating IOrganizationService instances
+        private IOrganizationServiceFactory _factory;
+
+        // Provides programmatic access to the metadata and data for an organization.
+        // Contains methods provided by Organization Service. Used in locations where user is granted access
+        private IOrganizationService _userOrganizationService;
+
+        // Provides programmatic access to the metadata and data for an organization.
+        // Contains methods provided by Organization Service. Used in locations where only system can access
+        private IOrganizationService _systemOrganizationService;
+
+        // Provides a class for sending HTTP requests and receiving HTTP responses from a resource identified by a URI.
+        private HttpClient _httpClient;
+
+        // Constructor for PluginContext class containing IServiceProvider parameter.
+        // IServiceProvider defines a mechanism for retrieving a service object; that is, an object that provides custom support to other objects.
+        public PluginContext(IServiceProvider serviceProvider)
+        {
+            try
+            {
+                // If the service provider is null, throw an error.
+                if (serviceProvider == null)
+                {
+                    throw new InvalidPluginExecutionException("serviceProvider");
+                }
+
+                // Obtain the tracing service from the service provider
+                _tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
+
+                // Obtain the execution context from the service provider. 
+                _context = (IPluginExecutionContext)
+                    serviceProvider.GetService(typeof(IPluginExecutionContext));
+
+                // Get the OrganizationServiceFactory from the service provider
+                _factory =
+                    (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
+
+                //Create the organization service using the OrganizationServiceFactory passing the id of the user that initiated the web service
+                _userOrganizationService = _factory.CreateOrganizationService(_context.InitiatingUserId);
+
+                //Create the organization service using the OrganizationServiceFactory passing a null value indicating that its a system user
+                _systemOrganizationService = _factory.CreateOrganizationService(null);
+
+                // Creating a new instance of the entity service passing the system organization service
+                _entityService = new EntityService(_systemOrganizationService);
+
+                HttpClientHandler handler = new HttpClientHandler();
+
+                // Initializes a new instance of the HttpClient class
+                _httpClient = new HttpClient(handler, false);
+            }
+            catch (Exception e)
+            {
+                // Trace the error message
+                _tracingService?.Trace(e.Message);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Defining the public PluginContext attributes
+        /// </summary>
+        public EntityService Service
+        {
+            get => _entityService;
+            set => _entityService = value;
+        }
+
+        public ITracingService TracingService
+        {
+            get => _tracingService;
+            set => _tracingService = value;
+        }
+
+        public IPluginExecutionContext Context
+        {
+            get => _context;
+            set => _context = value;
+        }
+
+        public IOrganizationServiceFactory Factory
+        {
+            get => _factory;
+            set => _factory = value;
+        }
+
+        public IOrganizationService UserOrganizationService
+        {
+            get => _userOrganizationService;
+            set => _userOrganizationService = value;
+        }
+
+        public IOrganizationService SystemOrganizationService
+        {
+            get => _systemOrganizationService;
+            set => _systemOrganizationService = value;
+        }
+
+        public HttpClient HttpClient
+        {
+            get => _httpClient;
+            set => _httpClient = value;
+        }
+    }
+}
+```
+
+And here is the creation of the new instnace:
+
+```c#
+public void Execute(IServiceProvider serviceProvider)
+{
+    if (serviceProvider == null) throw new InvalidPluginExecutionException("serviceProvider");
+	PluginContext pluginContext = new PluginContext(serviceProvider);
+    // Other Business Logic
+}
+```
+
+Additionally, two additional attributes were added:
+
+1. The Http Client, so that we weren't creating a new one each time the request was called to make an outbound request.
+2. `_systemOrganizationService = _factory.CreateOrganizationService(null);` was added for when operations needed to be executed that were not accessible by someone without the correct privileges.
+
+Overall, this week a lot of progress was made for the project. Each of the aspects of the project (plugins and custom component) we refactored and made to be consistent with each other, redundant code was removed, and all of the code was commented. Not much was learned this week as the focus was to tidy up what was already working, rather than adding additional functionality.
+
+------
+
+# Week 13 - 19/10/2022
+
+This week it was asked that the solution was documented as a whole. This meant that each aspect of the product were explained in the instance that someone were to look at the system and want to know how it works.
+This includes such things as:
+
+- File Structure
+- File Names
+- Purposes of Files
+- Where to go if you want to modify a certain task (i.e. the method for making requests to a certain plugin)
+- Naming conventions
+- Configurations (Sitecore API Key, URL, Max visits)
+- A glossary of terms.
+
+The following was produced
+
+## Dynamics Solution
+
+### File Structure:
+
+![img](https://imgur.com/dUVf5v5.png)
+
+### Custom Entities
+
+- **Sitecore Behavior** 
+- **Sitecore Behavior Profile Key**
+- **Sitecore Goal**
+- **Sitecore Visit**
+- **Sitecore XDB Contact**
+
+### Custom Processes (Actions)
+
+- **GetData**
+  - Action used when request is made to get analytics details of a given lead. Triggers plugin for individual visits. Expects a `leadid` input and optionally has a `data` output.
+- **GetEvents**
+  - Action used when request is made to get details of an individual visit. Triggers plugin for individual visits. Expects a `visitid` input and optionally has a `data` output.
+- **RefreshAnalytics**
+  - Action used when request is made to refresh the analytics. Triggers plugin for analytics refresh. Expects a `leadid` input and optionally has a `data` output.
+
+### Custom Control (PCF Component)
+
+- **SitecoreSummaryComponent**
+  - Display Name: dev_Fuseit.S4D.Dynamics.SitecoreSummaryComponent
+  - Does not require a set value when added to the form. Selecting a value will not do anything in the way of functionality. Selecting `lead` may cause the component to get stuck on the form as it is a required field (do not try). 
+
+### Environment Variables
+
+- **Sitecore Configuration**
+  - Required to make outbound requests to the web server.
+  - Set in the "current value" textbox.
+  - Attribute naming must be exactly the same as: `{"SitecoreApiUrl" : "<URL>","SitecoreApiKey" : "<API Key>","maxVisits" : <Number of visits> }`
+    - The API URL and the API Key must be a string format (between quotations " ")
+    - The maxVisits must be an integer type (no decimals and no quotation marks " ")
+
+### Other
+
+- Contact and Lead are added when you create lookup fields on an entity. These should not be deleted or modified.
+
+------
+
+## GitHub Folder
+
+### General File Structure
+
+```
+📦FuseInfoTech/S4D-Dynamics:BRANCH:dev/proof-of-concept 
+│   📄README.md  
+└───📁Plugins
+│   └───📦Plugin-GetAnalytics
+│   └───📦Plugin-IndividualEvents
+│   └───📦Plugin-RefreshAnalytics 
+└───📁Components
+│   └───📦SitecoreLeadSummaryComponent 
+└───Tools
+│   └───📁ConfigurationMigration 
+│   └───📁CoreTools 
+│   └───📁PackageDeployment 
+│   └───📁PluginRegistration 
+```
+
+- The `Plugins` folder contains the custom plugins for performing each of the required tasks
+- The `Components` folder contains the custom controls (Power Apps Components)
+- The `Tools` folder contains tools used in code development. These tools include:
+  - Code Generation tool `CrmSvcUtil.exe`
+  - Configuration Migration tool `DataMigrationUtility.exe`
+  - Package Deployer `PackageDeployer.exe`
+  - Plug-in Registration tool `PluginRegistration.exe`
+  - SolutionPackager tool `SolutionPackager.exe`
+
+------
+
+### Plugin_Retrieve_Analytics
+
+#### Purpose
+
+The purpose of this plugin is to retrieve visits relevant to a given Lead from the Dynamics database and perform calculations to get the statistics before returning the data to the sender.
+
+*Source:* *https://github.com/FuseInfoTech/S4D-Dynamics/tree/dev/proof-of-concept/Plugins/Plugin-GetAnalytics*
+
+*File Path:* *[C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Plugins\Plugin-GetAnalytics\Plugin_Retrieve_Analytics.sln](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Plugins\Plugin-GetAnalytics\Plugin_Retrieve_Analytics.sln)*
+
+#### File Structure
+
+**NOTE**: I have only listed the important files for this solution. These are ones that I have worked with and will likely only need to me added to/modified.
+
+```
+📦Plugin_Retrieve_Analytics
+| 📜PluginBase.cs
+|
+└───📁Context
+|	| 📜PluginContext.cs
+|
+└───📁Entities
+|	└───📁BaseEntities
+|	|	| 📜SitecoreSummary.cs
+|	|
+|	└───📁SitecoreEntities
+|	|	| 📜SitecoreVisitEntity.cs
+|	|	| 📜SitecoreXDBContactEntity.cs
+|	|
+└───📁Services
+|	| 📜DynamicsService.cs
+|	| 📜EntityService.cs
+|	| 📜OptionSets.cs
+|
+└───📁Utilities
+|	| 📜JsonUtil.cs
+|	| 📜StringUtil.cs
+```
+
+The `PluginBase.cs` file is the base class that implements the IPlugin interface, which is the base interface for a plugin. This contains the executable function that instantiates a new `PluginContext` instance that will be used throughout the plugin. This class has minimal functionality as its purpose is to call the services that handle getting the input parameters, making outbound requests, manipulating data, and defining output parameters. 
+
+The `Context` folder contains a file called `PluginContext.cs.` This contains a class called `PluginContext` that is used for creating the services related to the Dynamics solution. This includes:
+
+-  **_entityService:** Represents a source of entities bound to a CRM service. It tracks and manages changes made to the retrieved entities.
+
+-  **_tracingService:** Interface for plug-ins to provide trace information. Used for debugging and/or troubleshooting plug-in issues or behaviors are complicated without rich and insightful logging or tracing.
+
+-  **_context:** Defines the contextual information passed to a plug-in at run-time. Contains information that describes the run-time environment that the plug-in is executing in, information related to the execution pipeline, and entity business information.
+
+-  **_factory:** Represents a factory for creating IOrganizationService instances
+
+-  **_userOrganizationService:** Provides programmatic access to the metadata and data for an organization. Contains methods provided by Organization Service. Used in locations where user is granted access
+
+-  **_systemOrganizationService:** Provides programmatic access to the metadata and data for an organization. Contains methods provided by Organization Service. Used in locations where only system can access.
+
+-  **_httpClient:** Provides a class for sending HTTP requests and receiving HTTP responses from a resource identified by a URI.
+
+The `Entities` folder contains two subfolders, `BaseEntities` and `SitecoreEntities`. The `BaseEntities` folder contain classes that are not specific to the custom entities in Dynamics or classes that are versions of Dynamics entities, containing only the attributes that we want to work with. The `SitecoreSummary` folder contains a class that returns the statistics details of a given lead as well as a list of all the visits. The `SitecoreEntities` folder contains all of the early bound entities generated by XrmToolBox.
+
+The `Services` folder contains three different services: 
+
+- `DynamicsService.cs`: Contains methods that handle data in relation to the Dynamics side of operations. For example, retrieving entities from entity sets.
+- `EntityService.cs`: Represents a source of entities bound to a CRM service. It tracks and manages changes made to the retrieved entities.
+- `OptionSets.cs`: Generated using XrmToolBox, creating enumerators for optionsets.
+
+The `Utilities ` folder is used to store code utilities. In this case, we have one file called `JsonUtil.cs` which contains a method for deserialization JSON strings to objects and serialize objects into JSON strings. We have another file called `StringUtil.cs` which handles string conversion, null checks, and checks for whitespace.
+
+------
+
+### Plugin_Individual_Events
+
+#### Purpose
+
+The purpose of this plugin is to make an on-demand outbound request to the Sitecore Web Server to retrieve events relative to a given visit. The Web server returns an array of event objects containing the URL, visit type, and timestamp of the event. This data is then passed back to the sender.
+
+*Source:* *https://github.com/FuseInfoTech/S4D-Dynamics/tree/dev/proof-of-concept/Plugins/Plugin-IndividualEvents/Plugin_Individual_Events/Plugin_Individual_Events*
+
+*File Path:* [*C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Plugins\Plugin-IndividualEvents\Plugin_Individual_Events/Plugin_Individual_Events.sln*](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Plugins\Plugin-IndividualEvents\Plugin_Individual_Events/Plugin_Individual_Events.sln)
+
+#### File Structure
+
+**NOTE**: I have only listed the important files for this solution. These are ones that I have worked with and will likely only need to me added to/modified.
+
+```
+📦Plugin_Individual_Events
+| 📜PluginBase.cs
+|
+└───📁Context
+|	| 📜PluginContext.cs
+|
+└───📁Entities
+|	└───📁BaseEntities
+|	|	| 📜EventEntityBase.cs
+|	|	| 📜ResponseMessage.cs
+|	|	| 📜SitecoreConfig.cs 
+|	|
+|	└───📁SitecoreEntities
+|	|	| 📜EnvironmentVariableDefinitionEntity.cs
+|	|	| 📜EnvironmentVariableValueEntity.cs
+|	|	| 📜SitecoreVisitEntity.cs
+|	|	| 📜SitecoreXDBContactEntity.cs
+|
+└───📁Services
+|	| 📜DynamicsService.cs
+|	| 📜EntityService.cs
+|	| 📜OptionSets.cs
+|	| 📜SitecoreService.cs
+|
+└───📁Utilities
+|	| 📜JsonUtil.cs
+|	| 📜StringUtil.cs
+```
+
+The `PluginBase.cs` file is the base class that implements the IPlugin interface, which is the base interface for a plugin. This contains the executable function that instantiates a new `PluginContext` instance that will be used throughout the plugin. This class has minimal functionality as its purpose is to call the services that handle getting the input parameters, making outbound requests, manipulating data, and defining output parameters. 
+
+The `Context` folder contains a file called `PluginContext.cs.` This contains a class called `PluginContext` that is used for creating the services related to the Dynamics solution. This includes:
+
+-  **_entityService:** Represents a source of entities bound to a CRM service. It tracks and manages changes made to the retrieved entities.
+
+-  **_tracingService:** Interface for plug-ins to provide trace information. Used for debugging and/or troubleshooting plug-in issues or behaviors are complicated without rich and insightful logging or tracing.
+
+-  **_context:** Defines the contextual information passed to a plug-in at run-time. Contains information that describes the run-time environment that the plug-in is executing in, information related to the execution pipeline, and entity business information.
+
+-  **_factory:** Represents a factory for creating IOrganizationService instances
+
+-  **_userOrganizationService:** Provides programmatic access to the metadata and data for an organization. Contains methods provided by Organization Service. Used in locations where user is granted access
+
+-  **_systemOrganizationService:** Provides programmatic access to the metadata and data for an organization. Contains methods provided by Organization Service. Used in locations where only system can access.
+
+-  **_httpClient:** Provides a class for sending HTTP requests and receiving HTTP responses from a resource identified by a URI.
+
+The `Entities` folder contains two subfolders, `BaseEntities` and `SitecoreEntities`. The `BaseEntities` folder contain classes that are not specific to the custom entities in Dynamics or classes that are versions of Dynamics entities, containing only the attributes that we want to work with.  The `SitecoreEntities` folder contains all of the early bound entities generated by XrmToolBox. There are three files in the `BaseEntities` folder:
+
+- `EventEntityBase.cs`: base class for a given event. Used when serializing and deserializing JSON from the web server to the custom control.
+- `ResponseMessage.cs`: base class representing a response message that is returned from the plugin in a JSON string format.
+- `SitecoreConfig.cs`: base class containing attributes that match the Sitecore configuration specified in the Environment Variables
+
+The `Services` folder contains four different services: 
+
+- `DynamicsService.cs`: Contains methods that handle data in relation to the Dynamics side of operations. For example, retrieving entities from entity sets.
+- `SitecoreService.cs`: Contains method that handle data in relation to the Sitecore side of operations. This includes making outbound requests to the web server
+- `EntityService.cs`: Represents a source of entities bound to a CRM service. It tracks and manages changes made to the retrieved entities.
+- `OptionSets.cs`: Generated using XrmToolBox, creating enumerators for optionsets.
+
+The `Utilities ` folder is used to store code utilities. In this case, we have one file called `JsonUtil.cs` which contains a method for deserialization JSON strings to objects and serialize objects into JSON strings. We have another file called `StringUtil.cs` which handles string conversion, null checks, and checks for whitespace.
+
+------
+
+### Plugin_Refresh_Analytics
+
+#### Purpose
+
+The purpose of this plugin is to make an outbound request to the Sitecore web service, return a set of visits, determine whether they exist, and update or insert the visits into Dynamics. This plugin does not return a set of data, just a response message (success/error).
+
+*Source:* *https://github.com/FuseInfoTech/S4D-Dynamics/tree/dev/proof-of-concept/Plugins/Plugin-RefreshSitecoreAnalytics/Plugin_Refresh_Analytics/Plugin_Refresh_Analytics*
+
+*File Path:* [*C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Plugins\Plugin-RefreshSitecoreAnalytics\Plugin_Refresh_Analytics/Plugin_Refresh_Analytics.sln*](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Plugins\Plugin-RefreshSitecoreAnalytics\Plugin_Refresh_Analytics/Plugin_Refresh_Analytics.sln)
+
+#### File Structure
+
+**NOTE**: I have only listed the important files for this solution. These are ones that I have worked with and will likely only need to me added to/modified.
+
+```
+📦Plugin_Refresh_Analytics
+| 📜PluginBase.cs
+|
+└───📁Context
+|	| 📜PluginContext.cs
+|
+└───📁Entities
+|	└───📁BaseEntities
+|	|	| 📜GoalEntityBase.cs
+|	|	| 📜ResponseEntity
+|	|	| 📜ResponseMessage.cs
+|	|	| 📜SitecoreConfig.cs
+|	|	| 📜VisitEntityBase.cs
+|	|
+|	└───📁SitecoreEntities
+|	|	| 📜EnvironmentVariableDefinitionEntity.cs
+|	|	| 📜EnvironmentVariableValueEntity.cs
+|	|	| 📜SitecoreVisitEntity.cs
+|	|	| 📜SitecoreXDBContactEntity.cs
+|
+└───📁Services
+|	| 📜DynamicsService.cs
+|	| 📜EntityService.cs
+|	| 📜OptionSets.cs
+|	| 📜SitecoreService.cs
+|
+└───📁Utilities
+|	| 📜JsonUtil.cs
+|	| 📜StringUtil.cs
+```
+
+The `PluginBase.cs` file is the base class that implements the IPlugin interface, which is the base interface for a plugin. This contains the executable function that instantiates a new `PluginContext` instance that will be used throughout the plugin. This class has minimal functionality as its purpose is to call the services that handle getting the input parameters, making outbound requests, manipulating data, and defining output parameters.  
+
+The `Context` folder contains a file called `PluginContext.cs.` This contains a class called `PluginContext` that is used for creating the services related to the Dynamics solution. This includes:
+
+-  **_entityService:** Represents a source of entities bound to a CRM service. It tracks and manages changes made to the retrieved entities.
+
+-  **_tracingService:** Interface for plug-ins to provide trace information. Used for debugging and/or troubleshooting plug-in issues or behaviors are complicated without rich and insightful logging or tracing.
+
+-  **_context:** Defines the contextual information passed to a plug-in at run-time. Contains information that describes the run-time environment that the plug-in is executing in, information related to the execution pipeline, and entity business information.
+
+-  **_factory:** Represents a factory for creating IOrganizationService instances
+
+-  **_userOrganizationService:** Provides programmatic access to the metadata and data for an organization. Contains methods provided by Organization Service. Used in locations where user is granted access
+
+-  **_systemOrganizationService:** Provides programmatic access to the metadata and data for an organization. Contains methods provided by Organization Service. Used in locations where only system can access.
+
+-  **_httpClient:** Provides a class for sending HTTP requests and receiving HTTP responses from a resource identified by a URI.
+
+The `Entities` folder contains two subfolders, `BaseEntities` and `SitecoreEntities`. The `BaseEntities` folder contain classes that are not specific to the custom entities in Dynamics or classes that are versions of Dynamics entities, containing only the attributes that we want to work with. The `SitecoreSummary` folder contains a class that returns the statistics details of a given lead as well as a list of all the visits. The `SitecoreEntities` folder contains all of the early bound entities generated by XrmToolBox.
+
+The `Services` folder contains four different services: 
+
+- `DynamicsService.cs`: Contains methods that handle data in relation to the Dynamics side of operations. For example, retrieving entities from entity sets.
+- `SitecoreService.cs`: Contains method that handle data in relation to the Sitecore side of operations. This includes making outbound requests to the web server
+- `EntityService.cs`: Represents a source of entities bound to a CRM service. It tracks and manages changes made to the retrieved entities.
+- `OptionSets.cs`: Generated using XrmToolBox, creating enumerators for optionsets.
+
+The `Utilities ` folder is used to store code utilities. In this case, we have one file called `JsonUtil.cs` which contains a method for deserialization JSON strings to objects and serialize objects into JSON strings. We have another file called `StringUtil.cs` which handles string conversion, null checks, and checks for whitespace.
+
+------
+
+### PluginRegistration
+
+Executable: `PluginRegistration.exe`
+
+*File Path:* [*C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Tools\PluginRegistration\PluginRegistration.exe*](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Tools\PluginRegistration\PluginRegistration.exe)
+
+Use: Used for registering the plugins mentioned above. Use is required to register them to the Microsoft Dataverse.
+
+![PluginRegistrationTool](https://imgur.com/vLsOgQL.png)
+
+#### Config
+
+| Plugin                    | Output File                                                  | Step Message         | Primary/Secondary Entity | Step Stage Of Execution |
+| ------------------------- | :----------------------------------------------------------- | -------------------- | ------------------------ | ----------------------- |
+| Plugin_Refresh_Analytics  | C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Plugins\Plugin-RefreshSitecoreAnalytics\Plugin_Refresh_Analytics\Plugin_Refresh_Analytics\bin\Debug\Plugin_Refresh_Analytics.dll | dev_RefreshAnalytics | none                     | PostOperation           |
+| Plugin_Individual_Events  | C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Plugins\Plugin-IndividualEvents\Plugin_Individual_Events\Plugin_Individual_Events\bin\Debug\Plugin_Individual_Events.dll | dev_GetEvents        | none                     | PostOperation           |
+| Plugin_Retrieve_Analytics | C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Plugins\Plugin-GetAnalytics\DataRetrievalPlugin\bin\Debug\Plugin_Retrieve_Analytics.dll | dev_GetData          | none                     | PostOperation           |
+
+**No other configuration is required**
+
+
+
+------
+
+### SitecoreLeadSummaryComponent
+
+#### Purpose
+
+The purpose of this component is to presents Sitecore analytics data for a Lead, as referenced by `sitecorexdbcontact.leadid`.
+
+This displays the following details:
+
+- Simple overview statistics:
+  - Total Goal value
+  - Total Visit count
+  - Average visit time
+  - Total page view count
+- A tabulated list of the Visits, including: 
+  - Start date
+  - Channel
+  - Duration
+  - Total page view count
+  - Browser
+  - Total Goal value
+  - The visit ID which is a link that is used to view details of a single visit on-demand.
+- A button or link to update analytics data for single Lead on-demand
+
+![component](https://imgur.com/OUXBLnm.png)
+
+*Source:* *https://github.com/FuseInfoTech/S4D-Dynamics/tree/dev/proof-of-concept/Components/SitecoreSummaryComponent*
+
+*File Path:* [*C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent*](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent)
+
+#### File Structure
+
+**NOTE**: I have only listed the important files for this solution. These are ones that I have worked with and will likely only need to me added to/modified.
+
+```
+📦SitecoreLeadSummaryComponent
+└───📁SitecoreSummaryComponent
+|	📄ControlManifest.Input.xml
+|	📜index.ts
+|	└───📁Components
+|	|	| 📜ComponentBase.tsx
+|	|	| 📜ComponentBase.tsx
+|	|
+|	└───📁Solutions
+|	|	└───📁src
+|	|	| └───📁Other
+|	|	|	| 📄Solution.xml
+```
+
+- The control manifest is an XML file that contains the metadata of the code component. It also defines the behavior of the code component.
+
+  - The control node defines the namespace, version, and display name of the code component.
+
+    - **namespace**: Namespace of the code component.
+    - **Constructor**: Constructor of the code component.
+    - **Version**: Version of the component. Whenever you update the component, you need to update the version to see the latest changes in the runtime.
+    - **display-name-key**: Name of the code component that is displayed on the UI.
+    - **description-name-key**: Description of the code component that is displayed on the UI.
+    - **control-type**: The code component type. Only *standard* types of code components are supported.
+
+  - The property node defines the properties of the code component like defining the data type of the column. The property node is specified as the child element under the `control` element.
+
+    - **name**: Name of the property.
+
+    - **display-name-key**: Display name of the property that is displayed on the UI.
+
+    - **description-name-key**: Description of the property that is displayed on the UI.
+
+    - **of-type-group**: The `of-type-group` is used when you want to have more than two data type columns. The `of-type-group` specifies the component value and can contain whole, currency, floating point, or decimal values.
+
+    - **usage**: Has two properties, *bound* and *input*. Bound properties are bound only to the value of the column. Input properties are either bound to a column or allow a static value.
+
+    - **required**: Defines whether the property is required.
+
+  - The resources node defines the visualization of the code component. It contains all the resources that build the visualization and styling of the code component. The code is specified as a child element under the resources element.
+
+    - **code**: Refers to the path where all the resource files are located.
+
+    The manifest file for this component looks like this:
+
+    ```xml
+    <?xml version="1.0" encoding="utf-8" ?>
+    <manifest>
+      <control namespace="Fuseit.S4D.Dynamics" constructor="SitecoreLeadSummaryComponent" version="0.0.1" display-name-key="SitecoreLeadSummaryComponent" description-key="SitecoreLeadSummaryComponent description" control-type="virtual" >
+        <!--external-service-usage node declares whether this 3rd party PCF control is using external service or not, if yes, this control will be considered as premium and please also add the external domain it is using.
+        If it is not using any external service, please set the enabled="false" and DO NOT add any domain below. The "enabled" will be false by default.
+        Example1:
+          <external-service-usage enabled="true">
+            <domain>www.Microsoft.com</domain>
+          </external-service-usage>
+        Example2:
+          <external-service-usage enabled="false">
+          </external-service-usage>
+        -->
+        <external-service-usage enabled="false">
+          <!--UNCOMMENT TO ADD EXTERNAL DOMAINS
+          <domain></domain>
+          <domain></domain>
+          -->
+        </external-service-usage>
+        <!-- property node identifies a specific, configurable piece of data that the control expects from CDS -->
+        <property name="notRequired" display-name-key="Not Required" description-key="Selecting this will not do anything" of-type="SingleLine.Text" usage="bound" required="false" />
+        <!--
+          Property node's of-type attribute can be of-type-group attribute.
+          Example:
+          <type-group name="numbers">
+            <type>Whole.None</type>
+            <type>Currency</type>
+            <type>FP</type>
+            <type>Decimal</type>
+          </type-group>
+          <property name="sampleProperty" display-name-key="Property_Display_Key" description-key="Property_Desc_Key" of-type-group="numbers" usage="bound" required="true" />
+        -->
+        <resources>
+          <code path="index.ts" order="1"/>
+          <platform-library name="React" version="16.8.6" />
+          <platform-library name="Fluent" version="8.29.0" />
+          <!-- UNCOMMENT TO ADD MORE RESOURCES
+          <css path="css/SitecoreLeadSummaryComponent.css" order="1" />
+          <resx path="strings/SitecoreLeadSummaryComponent.1033.resx" version="1.0.0" />
+          -->
+        </resources>
+        <!-- UNCOMMENT TO ENABLE THE SPECIFIED API
+        <feature-usage>
+          <uses-feature name="Device.captureAudio" required="true" />
+          <uses-feature name="Device.captureImage" required="true" />
+          <uses-feature name="Device.captureVideo" required="true" />
+          <uses-feature name="Device.getBarcodeValue" required="true" />
+          <uses-feature name="Device.getCurrentPosition" required="true" />
+          <uses-feature name="Device.pickFile" required="true" />
+          <uses-feature name="Utility" required="true" />
+          <uses-feature name="WebAPI" required="true" />
+        </feature-usage>
+        -->
+      </control>
+    </manifest>
+    ```
+
+    - The property is set to `required=false`.  If we were to set it to true and select a primary key field, we would not have the ability to remove it as it would throw an error saying that you can't remove a required field.
+    - The React and Fluent platform libraries are added to allow the use of these in our component. This enables both the use of the React Framework and the Fluent UI Framework.
+
+#### Modifying the System
+
+| Action                                                       | Name                                                         | Line      | Location                                                     |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | --------- | :----------------------------------------------------------- |
+| Method for getting the LeadID                                | `init()`                                                     | 49        | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts) |
+| Method for updating the display                              | `updateView()`                                               | 60        | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts) |
+| Main props for the component                                 | `updateView()`                                               | 61        | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts) |
+| Method for retrieving the data from Dynamics (triggers dev_GetData) | `GetData()`                                                  | 88        | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts) |
+| Execution that calls the custom unbound action               | `GetData()`                                                  | 109       | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts) |
+| Mapping of JSON to Interfaces                                | `GetData()`                                                  | 120/132   | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts) |
+| Set the values of the ISitecoreStatistics object to the values from the response | `GetData()`                                                  | 161       | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts) |
+| Requests re-rendering of the control with updated data.      | `GetData()`                                                  | 170       | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\index.ts) |
+| ███████████                                                  | █████████████                                                | █████     | █████████████████████████████████████████████████████████████████████████ |
+| Modify detailslists                                          | General                                                      | N/A       | C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx |
+| Modify columns on the individual visits details detailslist  | `VisitsDetailsList()`                                        | 41        | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx) |
+| Modify the column on the table that displays all visits      | `VisitsDetailsList()`                                        | 80        | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx) |
+| The method for viewing details of a single visit on-demand   | `VisitsDetailsList()`                                        | 94        | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx) |
+| Modify the html for the details list component               | `VisitsDetailsList()`                                        | 235       | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx) |
+| Modify the html for the details list for all visits          | `VisitsDetailsList()`                                        | 238       | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx) |
+| Modify the html for the modal popup                          | `VisitsDetailsList()`                                        | 251       | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx) |
+| Modify the html for the details list for individual visit details | `VisitsDetailsList()`                                        | 271       | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx) |
+| Change the styling for the details list component            | `contentStyles`, `iconButtonStyles`, `stackTokens`, `stackStyles` | 296+      | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\DetailsList.tsx) |
+| ███████████                                                  | █████████████                                                | █████     | █████████████████████████████████████████████████████████████████████████ |
+| Modify Base Component                                        | General                                                      | N/A       | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx) |
+| Interfaces                                                   | `ISitecoreStatistics`, `ISitecoreVisit`, `IProps`, `IState`  | 22-73     | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx) |
+| Modify Base Component Class                                  | ComponentBase                                                | 81        | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx) |
+| The method that refreshes the analytics                      | `refresh()`                                                  | 93        | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx) |
+| Define the request variable                                  | `refresh()`                                                  | 99        | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx) |
+| Execute the request above (refresh analytics)                | `refresh()`                                                  | 118       | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx) |
+| Call the GetData method to retrieve the new data             | `refresh()`                                                  | 128       | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx) |
+| Refreshes the component                                      | `refresh()`                                                  | 130       | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx) |
+| Modify the html for the component                            | `render()`                                                   | 139 - 219 | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx) |
+| Change the styling for the component base component          | `palette()`, `styles()`                                      | 221+      | [C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx](C:\Repos\FuseInfoTech\S4D-Dynamics\S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Components\ComponentBase.tsx) |
+
+
+
+## Glossary
+
+| Name                    | Description                                                  | Alias                                                      |
+| ----------------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
+| Component (Power Apps)  | Components are a type of solution component, which means they can be included in a solution file and imported into different environments. | Custom Control, Code Component, PCF Component, PCF Control |
+| Component (React)       | React components are small, reusable pieces of code that return a React element to be rendered to the page. |                                                            |
+| Custom Process          | Custom process actions open a range of possibilities for composing business logic. With custom process actions, you can perform operations, such as Create, Update, Delete, Assign, or Perform Action. | Custom Actions, Actions                                    |
+| Entity                  | An entity defines the information you want to track in the form of records, which typically include properties such as company name, location, products, email, and phone. | Table                                                      |
+| Props                   | Props are inputs to a React component. They are data passed down from a parent component to a child component. |                                                            |
+| State                   | A component needs state when some data associated with it changes over time. For example, a `Checkbox` component might need `isChecked` in its state, and a `NewsFeed` component might want to keep track of `fetchedPosts` in its state. |                                                            |
+| Environment Variables   | Apps and flows often require different configuration settings across environments. Environment variables allow you to transport application configuration data with solutions and optionally manipulate the values in your Application Lifecycle Management (ALM) pipeline. They act as configurable input parameters allowing you to reference an environment variable within other solution components. You can update a value without modifying other components directly when using environment variables. | Sitecore Configuration                                     |
+| TSX                     | The file extension for Typescript files. Similar use as JSX, but using TypeScript |                                                            |
+| Step Message            | All data operations in the organization service are defined as messages. While the IOrganizationService provides 7 methods to perform data operations (Create, Retrieve, Retrieve Multiple, Update, Delete, Associate, Disassociate), each of these methods is a convenience wrapper around the underlying message which is ultimately invoked using the Execute method. |                                                            |
+| Primary Entity          | The primary entity that the plugin is bound to. If valid tables apply, you set this when you want to limit the number of times the plug-in is called. When left blank, messages like `Update`, `Delete`, `Retrieve`, and `RetrieveMultiple` or any message that can be applied with the message the plug-in will be invoked for all the tables that support this message. |                                                            |
+| Secondary Entity        | This field remains for backward compatibility for deprecated messages that accepted an array of EntityReference as the `Target` parameter. This field is typically not used anymore. |                                                            |
+| Step Stage of Execution | The stage in the event pipeline that the plug-in is executed. PreValiadion is for the initial operation, this stage will occur before the main system operation. PreOperation occurs before the main system operation and within the database transaction. PostOperation occurs after the main system operation and within the database transaction. | Event Pipeline Stage of execution                          |
+
+## Conclusion
+
+There is not much to discuss about this week. Documenting the system as a whole took up all the time and that was the primary focus. The only information that was learned was the details in the description of each item in the glossary. These details were from reading Microsoft documentation. In terms of the progress of the project, it is nearing completion. The physical product is a working proof-of-concept that meets the requirements of the project.
+
+This week was successful in the sense that the system could be handed to someone and they would have a good understanding of how it works, and could take over from where it has been left.
+
+------
+
+# Week 14 - 26/10/2022
