@@ -1,4 +1,15 @@
 # Week 13 - 19/10/2022
+This week it was asked that the solution was documented as a whole. This meant that each aspect of the product were explained in the instance that someone were to look at the system and want to know how it works.
+This includes such things as:
+- File Structure
+- File Names
+- Purposes of Files
+- Where to go if you want to modify a certain task (i.e. the method for making requests to a certain plugin)
+- Naming conventions
+- Configurations (Sitecore API Key, URL, Max visits)
+- A glossary of terms.
+
+The following was produced
 
 ## Dynamics Solution
 
