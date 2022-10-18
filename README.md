@@ -11,3 +11,5 @@
 - [Journal 9](https://github.com/dwewers/PRJ-S2-22-Journals/blob/main/Journals/Journal-9.md)
 - [Journal 10](https://github.com/dwewers/PRJ-S2-22-Journals/blob/main/Journals/Journal-10.md)
 - [Journal 11](https://github.com/dwewers/PRJ-S2-22-Journals/blob/main/Journals/Journal-11.md)
+- [Journal 12](https://github.com/dwewers/PRJ-S2-22-Journals/blob/main/Journals/Journal-12.md)
+- [Journal 13](https://github.com/dwewers/PRJ-S2-22-Journals/blob/main/Journals/Journal-13.md)
