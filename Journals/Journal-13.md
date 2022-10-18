@@ -628,3 +628,8 @@ Once the component is built using the CLI (https://learn.microsoft.com/en-us/pow
 | Secondary Entity        | This field remains for backward compatibility for deprecated messages that accepted an array of EntityReference as the `Target` parameter. This field is typically not used anymore. |                                                            |
 | Step Stage of Execution | The stage in the event pipeline that the plug-in is executed. PreValiadion is for the initial operation, this stage will occur before the main system operation. PreOperation occurs before the main system operation and within the database transaction. PostOperation occurs after the main system operation and within the database transaction. | Event Pipeline Stage of execution                          |
 
+## Conclusion
+
+There is not much to discuss about this week. Documenting the system as a whole took up all the time and that was the primary focus. The only information that was learned was the details in the description of each item in the glossary. These details were from reading Microsoft documentation. In terms of the progress of the project, it is nearing completion. The physical product is a working proof-of-concept that meets the requirements of the project.
+
+This week was successful in the sense that the system could be handed to someone and they would have a good understanding of how it works, and could take over from where it has been left.
