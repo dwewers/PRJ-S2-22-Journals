@@ -13,11 +13,13 @@ This includes such things as:
 
 The following was produced
 
-## Dynamics Solution
 
-### File Structure:
 
-![img](https://imgur.com/dUVf5v5.png)
+# Dynamics Solution
+
+## File Structure:
+
+![img](https://imgur.com/7Xvjgks.png)
 
 ### Custom Entities
 
@@ -30,16 +32,16 @@ The following was produced
 ### Custom Processes (Actions)
 
 - **GetData**
-  - Action used when request is made to get analytics details of a given lead. Triggers plugin for individual visits. Expects a `leadid` input and optionally has a `data` output.
+  - Action used when request is made to get analytics details of a given lead. Triggers plugin for individual visits. Expects a `leadid` input and optionally has a `data` output. The data output for this entity would either be a success response with the Sitecore summary details object in a JSON string format, or an error response with an error message.
 - **GetEvents**
-  - Action used when request is made to get details of an individual visit. Triggers plugin for individual visits. Expects a `visitid` input and optionally has a `data` output.
+  - Action used when request is made to get details of an individual visit. Triggers plugin for individual visits. Expects a `visitid` input and optionally has a `data` output. The data output for this entity would either be a success response with the events as an array (JSON string format), or an error response with an error message. 
 - **RefreshAnalytics**
-  - Action used when request is made to refresh the analytics. Triggers plugin for analytics refresh. Expects a `leadid` input and optionally has a `data` output.
+  - Action used when request is made to refresh the analytics. Triggers plugin for analytics refresh. Expects a `leadid` input and optionally has a `data` output. As this plugin does not return actual data, the output would only ever be a response message (success/failed)
 
 ### Custom Control (PCF Component)
 
-- **SitecoreSummaryComponent**
-  - Display Name: dev_Fuseit.S4D.Dynamics.SitecoreSummaryComponent
+- **SitecoreLeadSummaryComponent**
+  - Display Name: dev_Fuseit.S4D.Dynamics.SitecoreLeadSummaryComponent
   - Does not require a set value when added to the form. Selecting a value will not do anything in the way of functionality. Selecting `lead` may cause the component to get stuck on the form as it is a required field (do not try). 
 
 ### Environment Variables
@@ -53,7 +55,7 @@ The following was produced
 
 ### Other
 
-- Contact and Lead are added when you create lookup fields on an entity. These should not be deleted or modified.
+- Contact and Lead are added when you create lookup fields on an entity.
 
 ------
 
@@ -155,6 +157,21 @@ The `Services` folder contains three different services:
 
 The `Utilities ` folder is used to store code utilities. In this case, we have one file called `JsonUtil.cs` which contains a method for deserialization JSON strings to objects and serialize objects into JSON strings. We have another file called `StringUtil.cs` which handles string conversion, null checks, and checks for whitespace.
 
+#### Modifying the System
+
+| Action                                                       | Name                                                | Line     | Location                    |
+| ------------------------------------------------------------ | --------------------------------------------------- | -------- | :-------------------------- |
+| Any details related to the plugin context. Contains information that describes the run-time environment that the plug-in is executing in, information related to the execution pipeline, and entity business information. | PluginContext.cs                                    | 12 - 129 | /Context/                   |
+| Add or modify attributes of the object that is serialized and returned to the caller | SitecoreSummary.cs                                  | N/A      | /Entities/BaseEntities/     |
+| Add or modify Sitecore Entities                              | SitecoreVisitEntity.cs, SitecoreXDBContactEntity.cs | N/A      | /Entities/SitecoreEntities/ |
+| Modify actions relevant to Dynamics 365. This includes the calculations for the statistics, getting the visits from the entity service, and getting/setting the input and output parameters | DynamicsService.cs                                  | N/A      | /Services/                  |
+| Modifying the entity service that represents a source of entities bound to a CRM service. It tracks and manages changes made to the retrieved entities. This is when you want to add or remove entity sets | EntitySevice.cs                                     | N/A      | /Services/                  |
+| Add or modify existing JSON utilities                        | JsonUtil.cs                                         | N/A      | /Utilities/                 |
+| Add or modify existing string utilities                      | StringUtil.cs                                       | N/A      | /Utilities/                 |
+| Add or remove functionality from  the plugin base. This contains the execute method that requests the plug-in to Execute business logic. | PluginBase.cs                                       | N/A      | /                           |
+
+
+
 ------
 
 ### Plugin_Individual_Events
@@ -234,6 +251,24 @@ The `Services` folder contains four different services:
 
 The `Utilities ` folder is used to store code utilities. In this case, we have one file called `JsonUtil.cs` which contains a method for deserialization JSON strings to objects and serialize objects into JSON strings. We have another file called `StringUtil.cs` which handles string conversion, null checks, and checks for whitespace.
 
+#### Modifying the System
+
+| Action                                                       | Name                                                         | Line     | Location                    |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | -------- | :-------------------------- |
+| Any details related to the plugin context. Contains information that describes the run-time environment that the plug-in is executing in, information related to the execution pipeline, and entity business information. | PluginContext.cs                                             | 12 - 129 | /Context/                   |
+| Add or modify the object that the JSON is mapped to when returned from the web server. | EventEntityBase.cs                                           | N/A      | /Entities/BaseEntities/     |
+| The response message that is returned to the caller. This is a simple response status (success/failed) and a message containing a success message (action executed successfully), or an error message (e.g. Failed to contact the server) | ResponseMessage.cs                                           | N/A      | /Entities/BaseEntities/     |
+| Add or modify the object that the Sitecore config is mapped to. The config is the set of environment variables retrieved from Dynamics. | SitecoreConfig.cs                                            | N/A      | /Entities/BaseEntities/     |
+| Add or modify Sitecore Entities                              | EnvironmentVariableDefinitionEntity.cs, EnvironmentVariableValueEntity.cs, SitecoreVisitEntity.cs, SitecoreXDBContactEntity.cs | N/A      | /Entities/SitecoreEntities/ |
+| Modify actions relevant to Dynamics 365. This includes the calculations for the statistics, getting the visits from the entity service, and getting/setting the input and output parameters | DynamicsService.cs                                           | N/A      | /Services/                  |
+| Modifying the entity service that represents a source of entities bound to a CRM service. It tracks and manages changes made to the retrieved entities. This is when you want to add or remove entity sets | EntitySevice.cs                                              | N/A      | /Services/                  |
+| Modify actions related to Sitecore. This includes any http requests made to the server. | SitecoreService.cs                                           | N/A      | /Services/                  |
+| Add or modify existing JSON utilities                        | JsonUtil.cs                                                  | N/A      | /Utilities/                 |
+| Add or modify existing string utilities                      | StringUtil.cs                                                | N/A      | /Utilities/                 |
+| Add or remove functionality from  the plugin base. This contains the execute method that requests the plug-in to Execute business logic. | PluginBase.cs                                                | N/A      | /                           |
+
+
+
 ------
 
 ### Plugin_Refresh_Analytics
@@ -310,6 +345,28 @@ The `Services` folder contains four different services:
 - `OptionSets.cs`: Generated using XrmToolBox, creating enumerators for optionsets.
 
 The `Utilities ` folder is used to store code utilities. In this case, we have one file called `JsonUtil.cs` which contains a method for deserialization JSON strings to objects and serialize objects into JSON strings. We have another file called `StringUtil.cs` which handles string conversion, null checks, and checks for whitespace.
+
+#### Modifying the System
+
+| Action                                                       | Name                                                         | Line     | Location                    |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | -------- | :-------------------------- |
+| Any details related to the plugin context. Contains information that describes the run-time environment that the plug-in is executing in, information related to the execution pipeline, and entity business information. | PluginContext.cs                                             | 12 - 129 | /Context/                   |
+| Add or modify the object that the JSON is mapped to when returned from the web server. This is contained within the VisitEntityBase | GoalEntityBase.cs                                            | N/A      | /Entities/BaseEntities/     |
+| Add or modify the object that the JSON is mapped to when returned from the web server. This is the base entity that contains the VisitEntityBase | ResponseEntity.cs                                            | N/A      | /Entities/BaseEntities/     |
+| The response message that is returned to the caller. This is a simple response status (success/failed) and a message containing a success message (action executed successfully), or an error message (e.g. Failed to contact the server) | ResponseMessage.cs                                           | N/A      | /Entities/BaseEntities/     |
+| Add or modify the object that the Sitecore config is mapped to. The config is the set of environment variables retrieved from Dynamics. | SitecoreConfig.cs                                            | N/A      | /Entities/BaseEntities/     |
+| Modify the base entity that the JSON is mapped to when returned from the web server. This is contained within the ResponseEntity, and contains the GoalEntityBase | VisitEntityBase.cs                                           | N/A      | /Entities/BaseEntities/     |
+| Add or modify Sitecore Entities                              | EnvironmentVariableDefinitionEntity.cs, EnvironmentVariableValueEntity.cs, SitecoreVisitEntity.cs, SitecoreXDBContactEntity.cs | N/A      | /Entities/SitecoreEntities/ |
+| Modify actions relevant to Dynamics 365. This includes the calculations for the statistics, getting the visits from the entity service, and getting/setting the input and output parameters | DynamicsService.cs                                           | N/A      | /Services/                  |
+| Modifying the entity service that represents a source of entities bound to a CRM service. It tracks and manages changes made to the retrieved entities. This is when you want to add or remove entity sets | EntitySevice.cs                                              | N/A      | /Services/                  |
+| Modify actions related to Sitecore. This includes any http requests made to the server. | SitecoreService.cs                                           | N/A      | /Services/                  |
+| Add or modify existing JSON utilities                        | JsonUtil.cs                                                  | N/A      | /Utilities/                 |
+| Add or modify existing string utilities                      | StringUtil.cs                                                | N/A      | /Utilities/                 |
+| Add or remove functionality from  the plugin base. This contains the execute method that requests the plug-in to Execute business logic. | PluginBase.cs                                                | N/A      | /                           |
+
+
+
+
 
 ------
 
@@ -477,6 +534,47 @@ This displays the following details:
     - The property is set to `required=false`.  If we were to set it to true and select a primary key field, we would not have the ability to remove it as it would throw an error saying that you can't remove a required field.
     - The React and Fluent platform libraries are added to allow the use of these in our component. This enables both the use of the React Framework and the Fluent UI Framework.
 
+#### Adding to Dynamics
+
+Once the component is built using the CLI (https://learn.microsoft.com/en-us/power-apps/developer/component-framework/implementing-controls-using-typescript), you follow these steps:
+
+1. Import the solution. 
+
+   1. Click the `Import Solution` button![](https://i.imgur.com/63PSvwU.png)
+
+   2. Click the `Browse` button to open the file explorer![](https://i.imgur.com/HRPFlG8.png)
+
+   3. Navigate to the debug folder and select the `Solutions.zip` folder. Should be something like: 
+
+       `S4D-Dynamics\Components\SitecoreSummaryComponent\SitecoreLeadSummaryComponent\Solutions\bin\Debug\Solutions.zip`![](https://i.imgur.com/yWbRi6S.png)
+
+   4. Click `Next` button![](https://i.imgur.com/V4YZOgJ.png)
+
+   5. Click the import button. Make sure the checkbox is checked in the advanced settings![](https://i.imgur.com/g8vdRrf.png)
+
+   6. You will see that the component has been added to the solution![](https://i.imgur.com/7CbEjS8.png)
+
+2. Open the form editor `Tables > Lead > Forms`.
+
+   1. ![](https://i.imgur.com/SkwQGl0.png)
+   2. Click the `Sales Insights` form. If this is not there, click `Add Existing` and navigate to this form and add it to the solution.![](https://i.imgur.com/w7rFad0.png)
+   3. In the components tab, click `Get more components`![](https://i.imgur.com/JkubQSu.png)
+   4. If the previous steps have been done correctly, you should see the component here. Select the component![](https://i.imgur.com/0rDQwMl.png)
+   5. Click `Add`![](https://i.imgur.com/DIh7hBE.png)
+   6. You will see that it has added to the `More components` dropdown.![](https://i.imgur.com/2LEvsRY.png)
+   7. Create a `1-column tab`, then drag and drop the component onto the form. This pop-up will display. Do not select a column, just leave it blank and click done![](https://i.imgur.com/rRvgaIQ.png)
+   8. You will see that the component has been added. Click `Publish` to publish the changes to Dynamics![](https://i.imgur.com/tFatvR0.png)
+
+3. View the component
+
+   1. Go to  the Leads pipeline and select a lead. Make sure this dropdown is set to `Sales Insight` as that is the form we edited
+
+      ![](https://i.imgur.com/zV3gfvA.png)
+
+   2. Select the tab that says `Sitecore Visitor`. You will now see the component has loaded. 
+
+      ![](https://i.imgur.com/YI7fvYQ.png)
+
 #### Modifying the System
 
 | Action                                                       | Name                                                         | Line      | Location                                                     |
@@ -530,8 +628,3 @@ This displays the following details:
 | Secondary Entity        | This field remains for backward compatibility for deprecated messages that accepted an array of EntityReference as the `Target` parameter. This field is typically not used anymore. |                                                            |
 | Step Stage of Execution | The stage in the event pipeline that the plug-in is executed. PreValiadion is for the initial operation, this stage will occur before the main system operation. PreOperation occurs before the main system operation and within the database transaction. PostOperation occurs after the main system operation and within the database transaction. | Event Pipeline Stage of execution                          |
 
-## Conclusion
-
-There is not much to discuss about this week. Documenting the system as a whole took up all the time and that was the primary focus. The only information that was learned was the details in the description of each item in the glossary. These details were from reading Microsoft documentation. In terms of the progress of the project, it is nearing completion. The physical product is a working proof-of-concept that meets the requirements of the project.
-
-This week was successful in the sense that the system could be handed to someone and they would have a good understanding of how it works, and could take over from where it has been left.
